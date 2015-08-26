@@ -1,0 +1,76 @@
+<h1>Home</h1>
+
+<div class="row">
+  The time is <%= @time %>
+</div>
+
+<div class="row">
+  <form action="/calc" method="post" id="calc_form">
+    <div>
+      <input type="text" name="x" placeholder="X.."/>
+      <select name="operator">
+        <option value="plus">+</option>
+        <option value="minus">-</option>
+        <option value="times">*</option>
+        <option value="divided by">/</option>
+        <option value="power">^</option>
+      </select>
+      <input type="text" name="y" placeholder="Y.."/>
+      <input type="submit" value="do!"/> 
+    </div>
+  </form>
+  <div class="error" id="calc_error" style="display: none;"></div>
+  <div class="result" id="calc_result" style="display: none;"></div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    $('#calc_form').on('submit', function(event){
+      event.preventDefault();
+      var $form = $(this);
+      var inputs = $form.find("input[type='text']");
+      var ok = true;
+      $.each(inputs, function(i, field) {
+          var $field = $(field);
+          if(isNaN(parseFloat($field.val(), 10))) {
+             $field.addClass('missing');
+             ok = false;
+          } else {
+             $field.removeClass('missing');
+          }
+      });
+
+      $('#calc_error').hide().text('');
+      $('#calc_result').hide().text('');
+
+      if(ok){
+        // Allow form post
+        var promise = $.ajax({
+          type: "POST",
+          url: '/api/v1/calc',
+          data: $form.serialize(),
+          dataType: 'json'
+        });
+
+        promise.done(function( data) {
+          $('#calc_result').text(data.x + " " + data.operator + " " + data.y + " = " + data.result);
+          $('#calc_result').slideDown(600);
+        });
+
+        promise.fail(function( jqXHR, textStatus, errorThrown ) {
+          if(jqXHR.responseJSON.error){
+            $('#calc_error').text(jqXHR.responseJSON.error);
+          } else {
+            $('#calc_error').text(errorThrown);
+          }
+          $('#calc_error').slideDown(600);
+        } );
+      } else {
+        $('#calc_error').text('Invalid Input');
+        $('#calc_error').slideDown(600);
+      }
+
+    });
+  });
+</script>
+
